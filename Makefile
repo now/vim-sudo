@@ -1,48 +1,22 @@
-# contents: Vim Modern File Command Makefile.
-#
-# Copyright © 2006 Nikolai Weibull <now@bitwi.se>
-
-uname_O := $(shell uname -o 2>/dev/null || echo nothing)
-
-DESTDIR = $(HOME)/.vim
-
-INSTALL = install
-
-ifeq ($(uname_O),Cygwin)
-	DESTDIR = $(HOME)/vimfiles
-endif
-
-DIRS = \
-       plugin \
-       plugin/now
-
-doc_FILES =
-
-lib_FILES =
-
-plugin_FILES = \
-	       plugin/now/sudo.vim
+VIMBALL = sudo.vba
 
 FILES = \
-	$(doc_FILES) \
-	$(lib_FILES) \
-	$(plugin_FILES)
+	plugin/now/sudo.vim
 
-dest_DIRS = $(addprefix $(DESTDIR)/,$(DIRS))
+.PHONY: build install package
 
-dest_FILES = $(addprefix $(DESTDIR)/,$(FILES))
+build: $(VIMBALL)
 
--include config.mk
+install: build
+	ex -N --cmd 'set eventignore=all' -c 'so %' -c 'quit!' $(VIMBALL)
 
-.PHONY: all install
+package: $(VIMBALL).gz
 
-all:
-	@echo Please run “make install” to install files.
+%.vba: Manifest $(FILES)
+	ex -N -c '%MkVimball! $@ .' -c 'quit!' $<
 
-install: $(dest_DIRS) $(dest_FILES)
+%.gz: %
+	gzip -c $< > $@
 
-$(DESTDIR)/%: %
-	$(INSTALL) --mode=644 $< $@
-
-$(dest_DIRS):
-	$(INSTALL) --directory --mode=755 $@
+Manifest: Makefile
+	for f in $(FILES); do echo $$f; done > $@
